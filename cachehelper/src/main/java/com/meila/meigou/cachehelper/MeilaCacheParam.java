@@ -17,5 +17,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface MeilaCacheParam {
-	
+	String value() default "";//设置第二个key，暂时只用springEl中的获取语法，到时候再改装
 }

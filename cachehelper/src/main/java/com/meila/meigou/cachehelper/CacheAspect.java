@@ -20,6 +20,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
@@ -58,8 +65,12 @@ public class CacheAspect {
         String methodName = pjp.getSignature().getName();
         Object[] arguments = pjp.getArgs();
 
+
+
         // 试图得到标注的Cached类
         Method method = getMethod(pjp);
+        ParameterNameDiscoverer discoverer = new LocalVariableTableParameterNameDiscoverer();
+        String[] parameterNames = discoverer.getParameterNames(method);
         if (method == null) {
             return proceed(pjp, arguments);
         }
@@ -123,17 +134,22 @@ public class CacheAspect {
                 for (int i = 0; i < parameterAnnotations.length; i++) {
                     int length = parameterAnnotations[i].length;
                     if (length > 0) {// 存在annotation
-                        for (int j = 0; j < length; j++) {
+                        for (int j = 0; j < length; j++) {//找出所有带有
                             if (parameterAnnotations[i][j] instanceof MeilaCacheParam) {
-                                cacheKey = String.valueOf(arguments[i]);
-                                break;
+                                MeilaCacheParam meilaCacheParam = (MeilaCacheParam) parameterAnnotations[i][j];
+                                String value = meilaCacheParam.value();
+                                ExpressionParser parser = new SpelExpressionParser();
+                                EvaluationContext context = new StandardEvaluationContext();
+                                context.setVariable(parameterNames[i],arguments[i]);
+                                Expression expression = parser.parseExpression(value);
+                                Object key = expression.getValue();
+                                cacheKey = cacheKey + key;
+
                             }
                         }
                     }
                 }
-                if (cacheKey == null) {// 没找到MeilaCacheParam，默认使用第一个参数
-                    cacheKey = String.valueOf(arguments[0]);
-                }
+
                 cacheKey = anno.type().getPrefix() + cacheKey;
                 // 试图获取cache中的值
                 result = get(cacheKey, returnType);
@@ -228,6 +244,7 @@ public class CacheAspect {
         }
         Method method = null;
         try {
+
             method = pjp.getTarget().getClass().getMethod(pjp.getSignature().getName(), argTypes);
         } catch (NoSuchMethodException e) {
             method = findMethod(pjp.getTarget().getClass(), pjp.getSignature().getName(), argTypes);

@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 public @interface MeilaCached {
     String table() default "";// 对应数据库中的table name
 
-    String key() default "";// 不指定时默认生成key
+    String key() ;// 必须指定key
 
     int expireTime() default 0;
 
