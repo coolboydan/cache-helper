@@ -181,15 +181,7 @@ public class RedisAdapter {
 
     }
 
-    public Long zadd(final String key, final double score, final String member) {
-        return execute(new JedisAction<Long>() {
 
-            @Override
-            public Long action(Jedis jedis) {
-                return jedis.zadd(key, score, member);
-            }
-        });
-    }
 
     public Long hset(final String key, final String field, final String value) {
         return execute(new JedisAction<Long>() {
@@ -251,6 +243,16 @@ public class RedisAdapter {
         });
     }
 
+    public Long zadd(final String key, final double score, final String member) {
+        return execute(new JedisAction<Long>() {
+
+            @Override
+            public Long action(Jedis jedis) {
+                return jedis.zadd(key, score, member);
+            }
+        });
+    }
+
     /**
      *  
      */
@@ -287,8 +289,17 @@ public class RedisAdapter {
                 return jedis.zcard(key);
             }
         });
-
     }
+
+    public Long zrem(final String key,final String... member) {
+        return execute(new JedisAction<Long>() {
+            @Override
+            public Long action(Jedis jedis) {
+                return jedis.zrem(key, member);
+            }
+        });
+    }
+
 
     public long scard(final String key) {
         return execute(new JedisAction<Long>() {
